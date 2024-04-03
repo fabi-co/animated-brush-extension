@@ -1,0 +1,18 @@
+{
+    "name": "animated-brush",
+    "displayName": "Animated brush",
+    "description": "Create and use animated custom brushes ! Multi frames brushes.",
+    "version": "0.1",
+    "author": { "name": "Fabico",
+                "email": "fabico@fabico.fabico",
+                "url": "https://fabico.com/" },
+    "contributors": [ ],
+    "publisher": "myname",
+    "license": "CC-BY-4.0",
+    "categories": [ "Scripts" ],
+    "contributes": {
+        "scripts": [
+            { "path": "./src/animated_brush.lua" }
+        ]
+    }
+}
