@@ -12,7 +12,7 @@
     "categories": [ "Scripts" ],
     "contributes": {
         "scripts": [
-            { "path": "./src/animated_brush.lua" }
+            { "path": "./src/animated_brush.lua" } 
         ]
     }
 }

@@ -1,4 +1,5 @@
-local inspect = require('inspect')
+local draw  = require("src.draw")
+local utils = require("src.utils")
 
 -- Snippet
     -- for pix in img:pixels() do
@@ -17,20 +18,6 @@ local currentAnimBrush = nil
 
 -- Use for 
 local listenerCode = -1
-
--- Encode bytes to hexadecimal
-local function encode(bytes)
-    return bytes:gsub(".", function(byte)
-        return string.format("%02X", string.byte(byte))
-    end)
-end
-
--- Decode hexadecimal back to bytes
-local function decode(hex)
-    return hex:gsub("..", function(twoChars)
-        return string.char(tonumber(twoChars, 16))
-    end)
-end
 
 -- Select an area from the image
 local function selectedArea()
@@ -68,14 +55,7 @@ local function enableAddAnimBrush()
     return true
 end
 
--- Utility, lua hasn't one one those -_-
-local function getFirstElement(table)
-    assert(table ~= nil)
-    for key, value in pairs(table) do
-        return value
-    end
-    return nil
-end
+
 
 -- Copy a selection from a Cel into a new image.
 local function getAreaFromCel(selection, celNb)
@@ -97,40 +77,6 @@ local function getAreaFromCel(selection, celNb)
     return img
 end
 
--- Draw an image on a given cel 
-local function drawImgOnCel(layer, frame, imgBytes, imgSpec)
-
-    -- Gérer si nbFrames < cel + nbCels
-
-    local imgBrush  = Image(imgSpec)
-    imgBrush.bytes  = imgBytes
-    
-    local prevBrush = app.brush
-
-    local brush = Brush {
-        type =  BrushType.IMAGE ,
-        size = app.brush.size,
-        angle = app.brush.angle,
-        center = app.brush.center,
-        pattern = app.brush.pattern,
-        patternOrigin = app.brush.patternOrigin,
-        image = imgBrush
-    }
-
-    app.useTool{
-        tool   = 'pencil',
-        brush  = brush,
-        frame  = frame,
-        layer  = layer,
-        points = {app.editor.spritePos},
-        color  = app.fgColor
-    }
-
-    app.tool  = 'pencil'
-    app.brush = prevBrush
-end
-
-
 -- Set the tool to pencil and the brush image to the img of
 -- brushData.
 local function setAnimatedBrush(brushData)
@@ -147,7 +93,7 @@ local function setAnimatedBrush(brushData)
     }
     local imgBrush  = Image(spec)
 
-    imgBrush.bytes = decode(brushData.imgs[1])
+    imgBrush.bytes = utils.decode(brushData.imgs[1])
 
     app.tool = "pencil"
     app.brush = Brush {
@@ -179,15 +125,16 @@ local function drawAnimation(brushData)
                     colorMode        = specDict[k].colorMode,
                     transparentColor = specDict[k].transparentColor
                 }
-                local imgBytes = decode(brushData.imgs[k])
+                local imgBytes = utils.decode(brushData.imgs[k])
                 local frame    = app.sprite.frames[app.frame.frameNumber + k - 1]
-                drawImgOnCel(app.layer, frame, imgBytes, spec)
+                draw.drawImgOnCel(app.layer, frame, imgBytes, spec)
                 
             end
         end
     end
 end
 
+-- Function called when event on sprite happened
 local function onChange(tabData)
     return function(ev)
         if ev == nil then
@@ -197,7 +144,7 @@ local function onChange(tabData)
             return 1
         end
 
-        if app.tool.id == "pencil" then
+        if app.tool.id == "pencil" and app.brush.type == BrushType.IMAGE then
             if currentAnimBrush ~= nil then
                 drawAnimation(currentAnimBrush)
             end
@@ -206,8 +153,10 @@ local function onChange(tabData)
 end
 
 ------------- ENTER / EXIT ANIM MODE ----------
+
+-- Activate anim mode
 local function activateAnimatedMode(tabData)
-    local brushData  = getFirstElement(tabData)
+    local brushData  = utils.getFirstElement(tabData)
     currentAnimBrush = brushData
     if tabData == nil or brushData == nil then
         return 0
@@ -217,6 +166,7 @@ local function activateAnimatedMode(tabData)
     listenerCode = app.sprite.events:on('change', onChange(tabData))
 end
 
+-- Exit anim mode
 local function exitAnimMode()
     drawMode         = false
     currentAnimBrush = nil
@@ -272,7 +222,7 @@ local function showAddAnimDlg(tabData)
         local specs = {}
         for i, frame in ipairs(frames) do
             local img = getAreaFromCel(selArea, frame.frameNumber)
-            imgs[i] = encode(img.bytes)
+            imgs[i] = utils.encode(img.bytes)
             specs[i] = {
                 ["width"]            = img.spec.width, 
                 ["height"]           = img.spec.height,
