@@ -1,5 +1,14 @@
 local inspect = require('inspect')
 
+-- Snippet
+    -- for pix in img:pixels() do
+    --     print(pix.x, pix.y)
+    --     print(app.pixelColor.rgbaR(pix()))
+    --     print(app.pixelColor.rgbaG(pix()))
+    --     print(app.pixelColor.rgbaB(pix()))
+    --     print(app.pixelColor.rgbaA(pix()))
+    -- end
+
 -- True if use animated mode is on
 local drawMode = false
 
@@ -89,7 +98,7 @@ local function getAreaFromCel(selection, celNb)
 end
 
 -- Draw an image on a given cel 
-local function drawImgOnCel(cel, imgBytes, imgSpec)
+local function drawImgOnCel(layer, frame, imgBytes, imgSpec)
 
     -- Gérer si nbFrames < cel + nbCels
 
@@ -111,24 +120,14 @@ local function drawImgOnCel(cel, imgBytes, imgSpec)
     app.useTool{
         tool   = 'pencil',
         brush  = brush,
-        cel    = cel,
-        frame  = cel.frame,
-        layer  = cel.layer,
-        points = {app.editor.mousePos},
+        frame  = frame,
+        layer  = layer,
+        points = {app.editor.spritePos},
         color  = app.fgColor
     }
 
     app.tool  = 'pencil'
-    -- app.brush = Brush {
-    --     type =  BrushType.CIRCLE,
-    --     size = app.brush.size,
-    --     angle = app.brush.angle,
-    --     center = app.brush.center,
-    --     pattern = app.brush.pattern,
-    --     patternOrigin = app.brush.patternOrigin
-    -- }
     app.brush = prevBrush
-    app.refresh()
 end
 
 
@@ -163,14 +162,14 @@ local function setAnimatedBrush(brushData)
 end
 
 -- Check if the number of frames left < nbFrames
-local function isNbFramesEnough(cel, nbFrames)
-    return (#app.sprite.frames - cel.frameNumber + 1) >= nbFrames
+local function isNbFramesEnough(frame, nbFrames)
+    return (#app.sprite.frames - frame.frameNumber + 1) >= nbFrames
 end
 
 -- Draw a brush animation on multiple cels from the current layer
 local function drawAnimation(brushData)
     if brushData ~= nil then
-        if isNbFramesEnough(app.cel, brushData.nbCells) then
+        if isNbFramesEnough(app.frame, brushData.nbCells) then
             for k, v in pairs(brushData.imgs) do
                 local brushName = brushData.name
                 local specDict  = brushData.specs
@@ -181,8 +180,8 @@ local function drawAnimation(brushData)
                     transparentColor = specDict[k].transparentColor
                 }
                 local imgBytes = decode(brushData.imgs[k])
-                
-                drawImgOnCel(app.sprite., imgBytes, spec)
+                local frame    = app.sprite.frames[app.frame.frameNumber + k - 1]
+                drawImgOnCel(app.layer, frame, imgBytes, spec)
                 
             end
         end
@@ -192,18 +191,14 @@ end
 local function onChange(tabData)
     return function(ev)
         if ev == nil then
-            print("ev nil")
             return 2
         end
         if ev.fromUndo then
-            print("ev fromundo")
             return 1
         end
 
         if app.tool.id == "pencil" then
             if currentAnimBrush ~= nil then
-                print(currentAnimBrush)
-                -- local brushData = tabData[currentAnimBrush]
                 drawAnimation(currentAnimBrush)
             end
         end
@@ -255,7 +250,7 @@ local function showAddAnimDlg(tabData)
 
     local frameNb  = app.frame.frameNumber
     local nbFrames = #app.range.frames
-    local cels     = app.range.frames
+    local frames   = app.range.frames
     local selArea  = app.sprite.selection
 
     local data =
@@ -275,17 +270,9 @@ local function showAddAnimDlg(tabData)
 
         local imgs  = {}
         local specs = {}
-        for i, cel in ipairs(cels) do
-            local img = getAreaFromCel(selArea, frameNb)
+        for i, frame in ipairs(frames) do
+            local img = getAreaFromCel(selArea, frame.frameNumber)
             imgs[i] = encode(img.bytes)
-            -- for pix in img:pixels() do
-            --     print(pix.x, pix.y)
-            --     print(app.pixelColor.rgbaR(pix()))
-            --     print(app.pixelColor.rgbaG(pix()))
-            --     print(app.pixelColor.rgbaB(pix()))
-            --     print(app.pixelColor.rgbaA(pix()))
-            -- end
-
             specs[i] = {
                 ["width"]            = img.spec.width, 
                 ["height"]           = img.spec.height,
