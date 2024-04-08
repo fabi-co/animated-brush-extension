@@ -116,7 +116,19 @@ local function onClickShade(ev)
     if ev.button == MouseButton.LEFT then
         app.fgColor = ev.color
     elseif ev.button == MouseButton.RIGHT then
-        ev.color = app.fgColor
+        local colors = useAnimDlg.data.shadesAnimBrush
+        utils.replaceColorInTab(ev.color, app.fgColor, colors)
+        useAnimDlg:modify{
+            id="shadesAnimBrush",
+            colors=colors
+        }
+        currentAnimBrush.imgs = processing.replaceColorBatch(
+            currentAnimBrush.imgs,
+            currentAnimBrush.specs,
+            ev.color,
+            app.fgColor
+        )
+        setAnimatedBrush(currentAnimBrush)
     end
 end
 
@@ -249,7 +261,7 @@ local function showUseAnimDlg(tabData)
 
     useAnimDlg.bounds = Rectangle(0, 0, 200, 150)
 
-    useAnimDlg:color{ id="col", label="color", color=app.Color}
+    useAnimDlg
        :combobox{ 
             id="animBrushCbbox",
             label="Animated sprite",

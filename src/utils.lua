@@ -74,9 +74,10 @@ function utils.colorsFromInts(tab)
 end
 
 function utils.replaceColorInTab(old, new, tab)
+    assert(tab ~= nil)
     local e
     for k, v in pairs(tab) do
-        if v == old then
+        if v.rgbaPixel == old.rgbaPixel then
             e = k
             break
         end

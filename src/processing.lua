@@ -31,4 +31,31 @@ function processing.colorsFromImg(img, colors)
     end
 end
 
+-- Replace color from an image
+function processing.replaceColor(img, old, new)
+    for pix in img:pixels() do
+        if pix() == old.rgbaPixel then
+            pix(new.rgbaPixel)
+        end
+    end
+end
+
+function processing.replaceColorBatch(imgs, specDict, old, new)
+    local imgsBytesReplaced = {}
+    for k, v in pairs(imgs) do
+        local specs = ImageSpec{
+            width            = specDict[k].width,
+            height           = specDict[k].height,
+            colorMode        = specDict[k].colorMode,
+            transparentColor = specDict[k].transparentColor
+        }
+        local imgBytes = utils.decode(imgs[k])
+        local img      = Image(specs)
+        img.bytes      = imgBytes
+        processing.replaceColor(img, old, new)
+        imgsBytesReplaced[k] = utils.encode(img.bytes)
+    end
+    return imgsBytesReplaced
+end
+
 return processing
