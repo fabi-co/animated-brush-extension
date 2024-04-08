@@ -39,6 +39,11 @@ function draw.drawImgOnCel(layer, frame, imgBytes, imgSpec)
 end
 
 local function drawCompleteWithStatic(brushData)
+    -- All cells filled already, nothing to do
+    if #app.sprite.frames == brushData.nbCells then
+        return
+    end
+    
     local specDict = brushData.specs
     local specs    = ImageSpec{
         width            = specDict[1].width,
@@ -50,8 +55,14 @@ local function drawCompleteWithStatic(brushData)
 
     local firstFrameNb = app.frame.frameNumber
     local lastFrameNb  = app.frame.frameNumber + brushData.nbCells
+    local beginIt      = 1
 
-    for i = 1, firstFrameNb - 1 do
+    if not(utils.isNbFramesLeftOk(app.frame, brushData.nbCells)) then
+        beginIt     = (lastFrameNb % #app.sprite.frames) + 1
+        lastFrameNb = #app.sprite.frames
+    end
+
+    for i = beginIt, firstFrameNb - 1 do
         print("1st loop")
         print(i)
         local frame = app.sprite.frames[i]
@@ -66,30 +77,41 @@ local function drawCompleteWithStatic(brushData)
 end
 
 -- Draw a brush animation on multiple cels from the current layer
-function draw.drawAnimation(brushData, completeWithStatic)
-    if brushData ~= nil then
-        if utils.isNbFramesEnough(app.frame, brushData.nbCells) then
+function draw.drawAnimation(brushData, completeWithStatic, loopBack)
 
-            local specDict  = brushData.specs
-            for k, v in pairs(brushData.imgs) do
-                local specs = ImageSpec{
-                    width            = specDict[k].width,
-                    height           = specDict[k].height,
-                    colorMode        = specDict[k].colorMode,
-                    transparentColor = specDict[k].transparentColor
-                }
-                local imgBytes = utils.decode(brushData.imgs[k])
-                local frame    = app.sprite.frames[app.frame.frameNumber + k - 1]
-                draw.drawImgOnCel(app.layer, frame, imgBytes, specs)
-            end
-            
-            if completeWithStatic then
-                drawCompleteWithStatic(brushData)
-            end
-        else
-            app.alert("There is not enough frames left to draw the animation. Aborting.")
-        end
+    -- No brush
+    if brushData == nil then
+        return -1, "No brush available"
     end
+
+    -- Not enough frames
+    if not(utils.isTotalNbFramesOk(brushData.nbCells)) then
+        return -1, "There is not enough frames to draw the animation. Aborting."
+    end
+
+    -- Not enough frames left and not loop back
+    if not(utils.isNbFramesLeftOk(app.frame, brushData.nbCells)) and not(loopBack) then
+        return -1, "There is not enough frames left to draw the animation. Aborting."
+    end
+
+    local specDict  = brushData.specs
+    for k, v in pairs(brushData.imgs) do
+        local specs = ImageSpec{
+            width            = specDict[k].width,
+            height           = specDict[k].height,
+            colorMode        = specDict[k].colorMode,
+            transparentColor = specDict[k].transparentColor
+        }
+        local imgBytes = utils.decode(brushData.imgs[k])
+        local frame    = nextFrame(app.frame.frameNumber + k - 1)
+        draw.drawImgOnCel(app.layer, frame, imgBytes, specs)
+    end
+    
+    if completeWithStatic then
+        drawCompleteWithStatic(brushData)
+    end
+
+    return 0, nil
 end
 
 return draw

@@ -1,15 +1,6 @@
 local draw  = require("src.draw")
 local utils = require("src.utils")
 
--- Snippet
-    -- for pix in img:pixels() do
-    --     print(pix.x, pix.y)
-    --     print(app.pixelColor.rgbaR(pix()))
-    --     print(app.pixelColor.rgbaG(pix()))
-    --     print(app.pixelColor.rgbaB(pix()))
-    --     print(app.pixelColor.rgbaA(pix()))
-    -- end
-
 -- True if use animated mode is on
 local drawMode = false
 
@@ -21,6 +12,12 @@ local listenerCode = -1
 
 -- Flag to complete empty frames
 local completeWithStatic = false
+
+-- Flag for the animation to loop frame 1 if not enough frames left
+local loopBack = false
+
+-- Use to monitor the name of last command used
+local commandName = nil
 
 -- Returns false if there is no selection on canvas
 local function enableAddAnimBrush()
@@ -81,22 +78,43 @@ local function setAnimatedBrush(brushData)
     }
 end
 
+---------------------------------------------------
+------------------ EVENTS -------------------------
+---------------------------------------------------
+
 -- Function called when event on sprite happened
 local function onChange(tabData)
     return function(ev)
         if ev == nil then
-            return 2
+            return -1
         end
+
         if ev.fromUndo then
-            return 1
+            return -1
+        end
+
+        if commandName ~= nil and #commandName > 0 then
+            return -1
         end
 
         if app.tool.id == "pencil" and app.brush.type == BrushType.IMAGE then
             if currentAnimBrush ~= nil then
-                draw.drawAnimation(currentAnimBrush, completeWithStatic)
+                local error, msg = draw.drawAnimation(currentAnimBrush, completeWithStatic, loopBack)
+
+                if error ~= 0 then
+                    app.alert(msg)
+                end
             end
         end
     end
+end
+
+local function onCommandBegin(ev)
+    commandName = ev.name
+end
+
+local function onCommandEnd(ev)
+    commandName = nil
 end
 
 ------------- ENTER / EXIT ANIM MODE ----------
@@ -111,6 +129,8 @@ local function activateAnimatedMode(tabData)
     
     setAnimatedBrush(brushData)
     listenerCode = app.sprite.events:on('change', onChange(tabData))
+    app.events:on("beforecommand", onCommandBegin)
+    app.events:on("aftercommand", onCommandEnd)
 end
 
 -- Exit anim mode
@@ -119,6 +139,8 @@ local function exitAnimMode()
     currentAnimBrush = nil
 
     if listenerCode > -1 then
+        app.events:off(onCommandBegin)
+        app.events:off(onCommandEnd)
         app.sprite.events:off(listenerCode)
         listenerCode = -1
     end
@@ -134,6 +156,7 @@ local function exitAnimMode()
         image = nil
     }
 end
+
 ----------------------------------------------------
 ------------------ Dialogs -------------------------
 ----------------------------------------------------
@@ -240,10 +263,19 @@ local function showUseAnimDlg(tabData)
        :check{
             id="completeStaticAnim",
             label="Complete with static",
-            text="Complete all frames from the layer with the first frame from the animation",
+            text="Complete other frames with animation frame 1.",
             selected=false,
             onclick=function() 
                 completeWithStatic = dlg.data.completeStaticAnim
+            end
+       } 
+       :check{
+            id="loopBackAnim",
+            label="Loop back",
+            text="Loop frame 1 if not enough frames left",
+            selected=false,
+            onclick=function() 
+                loopBack = dlg.data.loopBackAnim
             end
        } 
        :shades{ 

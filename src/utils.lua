@@ -1,5 +1,15 @@
 -- Utilities module
 
+-- Snippet
+    -- for pix in img:pixels() do
+    --     print(pix.x, pix.y)
+    --     print(app.pixelColor.rgbaR(pix()))
+    --     print(app.pixelColor.rgbaG(pix()))
+    --     print(app.pixelColor.rgbaB(pix()))
+    --     print(app.pixelColor.rgbaA(pix()))
+    -- end
+
+
 if utils then return end
 
 local utils = {}
@@ -28,8 +38,22 @@ function utils.getFirstElement(table)
 end
 
 -- Check if the number of frames left < nbFrames
-function utils.isNbFramesEnough(frame, nbFrames)
+function utils.isNbFramesLeftOk(frame, nbFrames)
     return (#app.sprite.frames - frame.frameNumber + 1) >= nbFrames
+end
+
+-- check if total #frames <= #animationsFrames
+function utils.isTotalNbFramesOk(nbFrames)
+    return #app.sprite.frames >= nbFrames
+end
+
+-- Returns frame corresponding to frame number. If k > #nbFrames, 
+-- loop frame 1.
+function nextFrame(k)
+    local frameNb = (k % #app.sprite.frames)
+
+    if frameNb == 0 then frameNb = #app.sprite.frames end
+    return app.sprite.frames[frameNb]
 end
 
 return utils
