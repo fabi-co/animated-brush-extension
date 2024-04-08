@@ -1,5 +1,6 @@
-local draw  = require("src.draw")
-local utils = require("src.utils")
+local draw       = require("src.draw")
+local utils      = require("src.utils")
+local processing = require("src.processing")
 
 -- True if use animated mode is on
 local drawMode = false
@@ -29,26 +30,6 @@ local function enableAddAnimBrush()
         return false
     end
     return true
-end
-
--- Copy a selection from a Cel into a new image.
-local function getAreaFromCel(selection, celNb)
-    local img
-
-    if not(app.layer.isImage) or app.layer:cel(celNb) == nil or
-       selection.isEmpty then
-        img = Image(selection.bounds)
-        return img
-    end
-
-    local cel        = app.layer:cel(celNb)
-    local rectSelect = selection.bounds
-
-    rectSelect.x = rectSelect.x - cel.bounds.x
-    rectSelect.y = rectSelect.y - cel.bounds.y
-
-    img = Image(cel.image, rectSelect)
-    return img
 end
 
 -- Set the tool to pencil and the brush image to the img of
@@ -125,9 +106,17 @@ local function onCommandEnd(ev)
     commandName = nil
 end
 
-local function onFgColorChange()
+local function onFgBgColorChange()
     if currentAnimBrush ~= nil then
         setAnimatedBrush(currentAnimBrush)
+    end
+end
+
+local function onClickShade(ev)
+    if ev.button == MouseButton.LEFT then
+        app.fgColor = ev.color
+    elseif ev.button == MouseButton.RIGHT then
+        ev.color = app.fgColor
     end
 end
 
@@ -145,7 +134,8 @@ local function activateAnimatedMode(tabData)
     listenerCode = app.sprite.events:on('change', onChange(tabData))
     app.events:on("beforecommand", onCommandBegin)
     app.events:on("aftercommand", onCommandEnd)
-    app.events:on("fgcolorchange", onFgColorChange)
+    app.events:on("fgcolorchange", onFgBgColorChange)
+    app.events:on("bgcolorchange", onFgBgColorChange)
 end
 
 -- Exit anim mode
@@ -156,7 +146,7 @@ local function exitAnimMode()
     if listenerCode > -1 then
         app.events:off(onCommandBegin)
         app.events:off(onCommandEnd)
-        app.events:off(onFgColorChange)
+        app.events:off(onFgBgColorChange)
         app.sprite.events:off(listenerCode)
         listenerCode = -1
     end
@@ -205,10 +195,14 @@ local function showAddAnimDlg(tabData)
             return
         end
 
-        local imgs  = {}
-        local specs = {}
+        local imgs   = {}
+        local specs  = {}
+        local colors = {}
+
         for i, frame in ipairs(frames) do
-            local img = getAreaFromCel(selArea, frame.frameNumber)
+            local img = processing.getAreaFromCel(selArea, frame.frameNumber)
+            
+            processing.colorsFromImg(img, colors)
             imgs[i] = utils.encode(img.bytes)
             specs[i] = {
                 ["width"]            = img.spec.width, 
@@ -222,9 +216,9 @@ local function showAddAnimDlg(tabData)
             ["imgs"]    = imgs,
             ["specs"]   = specs,
             ["nbCells"] = nbFrames,
-            ["name"]    = name
+            ["name"]    = name,
+            ["colors"]  = utils.getKeys(colors)
         }
-
     end
 end
 
@@ -269,6 +263,10 @@ local function showUseAnimDlg(tabData)
                     text=currentAnimBrush.nbCells
                 }
                 setAnimatedBrush(currentAnimBrush)
+                useAnimDlg:modify{
+                    id="shadesAnimBrush",
+                    colors=utils.colorsFromInts(currentAnimBrush.colors)
+                }
             end
         }
        :label{
@@ -297,12 +295,13 @@ local function showUseAnimDlg(tabData)
        } 
        :shades{ 
             id="shadesAnimBrush",
+            label="colors",
             mode="sort",
-            colors={Color{ r=58, g=120, b=135, a=255 }, Color{ r=110, g=35, b=195, a=255 }, Color{ r=15, g=190, b=130, a=255 }}
+            colors=currentAnimBrush~=nil and utils.colorsFromInts(currentAnimBrush.colors) or {},
+            onclick=onClickShade
         }
        :show{ wait=false }
-
-    
+       
 end
 
 function init(plugin)  

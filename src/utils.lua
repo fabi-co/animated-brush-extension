@@ -29,12 +29,21 @@ function utils.decode(hex)
 end
 
 -- Utility, lua hasn't one one those -_-
-function utils.getFirstElement(table)
-    assert(table ~= nil)
-    for key, value in pairs(table) do
+function utils.getFirstElement(t)
+    assert(t ~= nil)
+    for key, value in pairs(t) do
         return value
     end
     return nil
+end
+
+-- Returns only the keys from a lua table
+function utils.getKeys(t)
+    local keys = {}
+    for k, _ in pairs(t) do
+        table.insert(keys, k)
+    end
+    return keys
 end
 
 -- Check if the number of frames left < nbFrames
@@ -49,11 +58,30 @@ end
 
 -- Returns frame corresponding to frame number. If k > #nbFrames, 
 -- loop frame 1.
-function nextFrame(k)
+function utils.nextFrame(k)
     local frameNb = (k % #app.sprite.frames)
 
     if frameNb == 0 then frameNb = #app.sprite.frames end
     return app.sprite.frames[frameNb]
+end
+
+function utils.colorsFromInts(tab)
+    colors = {}
+    for _, val in pairs(tab) do
+        table.insert(colors, Color(val))
+    end
+    return colors
+end
+
+function utils.replaceColorInTab(old, new, tab)
+    local e
+    for k, v in pairs(tab) do
+        if v == old then
+            e = k
+            break
+        end
+    end
+    tab[e] = new
 end
 
 return utils

@@ -103,7 +103,7 @@ function draw.drawAnimation(brushData, completeWithStatic, loopBack)
             transparentColor = specDict[k].transparentColor
         }
         local imgBytes = utils.decode(brushData.imgs[k])
-        local frame    = nextFrame(app.frame.frameNumber + k - 1)
+        local frame    = utils.nextFrame(app.frame.frameNumber + k - 1)
         draw.drawImgOnCel(app.layer, frame, imgBytes, specs)
     end
     
