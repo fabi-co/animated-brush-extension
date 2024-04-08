@@ -27,7 +27,9 @@ end
 -- Add new colors found in the image to colors table
 function processing.colorsFromImg(img, colors)
     for pix in img:pixels() do
-        colors[pix()] = 0
+        if app.pixelColor.rgbaA(pix()) ~= 0 then
+            colors[pix()] = 0
+        end
     end
 end
 

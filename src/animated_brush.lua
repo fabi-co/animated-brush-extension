@@ -118,16 +118,20 @@ local function onClickShade(ev)
     elseif ev.button == MouseButton.RIGHT then
         local colors = useAnimDlg.data.shadesAnimBrush
         utils.replaceColorInTab(ev.color, app.fgColor, colors)
+
         useAnimDlg:modify{
             id="shadesAnimBrush",
             colors=colors
         }
+
         currentAnimBrush.imgs = processing.replaceColorBatch(
             currentAnimBrush.imgs,
             currentAnimBrush.specs,
             ev.color,
             app.fgColor
         )
+
+        currentAnimBrush.colors = utils.colorsToRGBAPixels(colors)
         setAnimatedBrush(currentAnimBrush)
     end
 end

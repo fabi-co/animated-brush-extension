@@ -85,4 +85,14 @@ function utils.replaceColorInTab(old, new, tab)
     tab[e] = new
 end
 
+function utils.colorsToRGBAPixels(colors)
+    local rgbaPixels = {}
+
+    for k, v in pairs(colors) do
+        rgbaPixels[k] = v.rgbaPixel
+    end
+
+    return rgbaPixels
+end
+
 return utils
