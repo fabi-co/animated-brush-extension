@@ -19,6 +19,9 @@ local loopBack = false
 -- Use to monitor the name of last command used
 local commandName = nil
 
+-- Id of the use animation dialog
+local useAnimDlg = nil
+
 -- Returns false if there is no selection on canvas
 local function enableAddAnimBrush()
     local spr = app.sprite
@@ -55,14 +58,14 @@ local function setAnimatedBrush(brushData)
         return
     end
     
-    local specDict  = brushData.specs
-    local spec      = ImageSpec{
+    local specDict = brushData.specs
+    local spec     = ImageSpec{
         width            = specDict[1].width,
         height           = specDict[1].height,
         colorMode        = specDict[1].colorMode,
         transparentColor = specDict[1].transparentColor
     }
-    local imgBrush  = Image(spec)
+    local imgBrush = Image(spec)
 
     imgBrush.bytes = utils.decode(brushData.imgs[1])
 
@@ -97,15 +100,20 @@ local function onChange(tabData)
             return -1
         end
 
-        if app.tool.id == "pencil" and app.brush.type == BrushType.IMAGE then
-            if currentAnimBrush ~= nil then
-                local error, msg = draw.drawAnimation(currentAnimBrush, completeWithStatic, loopBack)
-
-                if error ~= 0 then
-                    app.alert(msg)
-                end
+        if app.tool.id ~= "pencil" or app.brush.type ~= BrushType.IMAGE then
+            if useAnimDlg ~= nil then
+                useAnimDlg:close()
             end
         end
+
+        if currentAnimBrush ~= nil then
+            local error, msg = draw.drawAnimation(currentAnimBrush, completeWithStatic, loopBack)
+
+            if error ~= 0 then
+                app.alert(msg)
+            end
+        end
+
     end
 end
 
@@ -115,6 +123,12 @@ end
 
 local function onCommandEnd(ev)
     commandName = nil
+end
+
+local function onFgColorChange()
+    if currentAnimBrush ~= nil then
+        setAnimatedBrush(currentAnimBrush)
+    end
 end
 
 ------------- ENTER / EXIT ANIM MODE ----------
@@ -131,6 +145,7 @@ local function activateAnimatedMode(tabData)
     listenerCode = app.sprite.events:on('change', onChange(tabData))
     app.events:on("beforecommand", onCommandBegin)
     app.events:on("aftercommand", onCommandEnd)
+    app.events:on("fgcolorchange", onFgColorChange)
 end
 
 -- Exit anim mode
@@ -141,6 +156,7 @@ local function exitAnimMode()
     if listenerCode > -1 then
         app.events:off(onCommandBegin)
         app.events:off(onCommandEnd)
+        app.events:off(onFgColorChange)
         app.sprite.events:off(listenerCode)
         listenerCode = -1
     end
@@ -155,6 +171,7 @@ local function exitAnimMode()
         patternOrigin = app.brush.patternOrigin,
         image = nil
     }
+    useAnimDlg = nil
 end
 
 ----------------------------------------------------
@@ -231,22 +248,22 @@ local function showUseAnimDlg(tabData)
         return names
     end
 
-    local dlg = Dialog{
+    useAnimDlg = Dialog{
         title="USE AN ANIMATED BRUSH",
         onclose=exitAnimMode
     }
 
-    dlg.bounds = Rectangle(0, 0, 300, 150)
+    useAnimDlg.bounds = Rectangle(0, 0, 200, 150)
 
-    dlg:color{ id="col", label="color", color=app.Color}
+    useAnimDlg:color{ id="col", label="color", color=app.Color}
        :combobox{ 
             id="animBrushCbbox",
             label="Animated sprite",
             option="None",
             options=brushesNames(tabData),
             onchange=function(a)
-                currentAnimBrush = tabData[dlg.data["animBrushCbbox"]:gsub("%s+", "")]
-                dlg:modify{ 
+                currentAnimBrush = tabData[useAnimDlg.data["animBrushCbbox"]:gsub("%s+", "")]
+                useAnimDlg:modify{ 
                     id="labelNbFramesAnim",
                     activated=true,
                     text=currentAnimBrush.nbCells
@@ -266,7 +283,7 @@ local function showUseAnimDlg(tabData)
             text="Complete other frames with animation frame 1.",
             selected=false,
             onclick=function() 
-                completeWithStatic = dlg.data.completeStaticAnim
+                completeWithStatic = useAnimDlg.data.completeStaticAnim
             end
        } 
        :check{
@@ -275,7 +292,7 @@ local function showUseAnimDlg(tabData)
             text="Loop frame 1 if not enough frames left",
             selected=false,
             onclick=function() 
-                loopBack = dlg.data.loopBackAnim
+                loopBack = useAnimDlg.data.loopBackAnim
             end
        } 
        :shades{ 
