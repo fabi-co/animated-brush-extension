@@ -16,37 +16,13 @@ local drawMode = false
 -- Id of the current anim brush if draw mode, nil otherwise
 local currentAnimBrush = nil
 
--- Use for 
+-- Event code returned for deactivating
 local listenerCode = -1
 
--- Select an area from the image
-local function selectedArea()
-    if app.brush == nil then return end
- 
-    local brush            = app.brush
-    local transformedImage = brush.image
+-- Flag to complete empty frames
+local completeWithStatic = false
 
-    if brush.image ~= nil then
-        for pixel in brush.image:pixels() do
-            transformedImage:drawPixel(pixel.x, pixel.y, app.pixelColor.rgba(255, 0, 0))
-        end
-    end
-
-    -- transformedImage:resize(brush.image.width + 1, brush.image.height + 1)
-
-    app.brush = Brush {
-        type = brush.type,
-        size = brush.size + 2,
-        angle = brush.angle,
-        center = brush.center,
-        pattern = brush.pattern,
-        patternOrigin = brush.patternOrigin,
-        image = transformedImage
-    }
-
-end
-
--- Return false if there is no selection on canvas
+-- Returns false if there is no selection on canvas
 local function enableAddAnimBrush()
     local spr = app.sprite
     if spr == nil or spr.selection == nil or spr.selection.isEmpty then
@@ -54,8 +30,6 @@ local function enableAddAnimBrush()
     end
     return true
 end
-
-
 
 -- Copy a selection from a Cel into a new image.
 local function getAreaFromCel(selection, celNb)
@@ -107,33 +81,6 @@ local function setAnimatedBrush(brushData)
     }
 end
 
--- Check if the number of frames left < nbFrames
-local function isNbFramesEnough(frame, nbFrames)
-    return (#app.sprite.frames - frame.frameNumber + 1) >= nbFrames
-end
-
--- Draw a brush animation on multiple cels from the current layer
-local function drawAnimation(brushData)
-    if brushData ~= nil then
-        if isNbFramesEnough(app.frame, brushData.nbCells) then
-            for k, v in pairs(brushData.imgs) do
-                local brushName = brushData.name
-                local specDict  = brushData.specs
-                local spec      = ImageSpec{
-                    width            = specDict[k].width,
-                    height           = specDict[k].height,
-                    colorMode        = specDict[k].colorMode,
-                    transparentColor = specDict[k].transparentColor
-                }
-                local imgBytes = utils.decode(brushData.imgs[k])
-                local frame    = app.sprite.frames[app.frame.frameNumber + k - 1]
-                draw.drawImgOnCel(app.layer, frame, imgBytes, spec)
-                
-            end
-        end
-    end
-end
-
 -- Function called when event on sprite happened
 local function onChange(tabData)
     return function(ev)
@@ -146,7 +93,7 @@ local function onChange(tabData)
 
         if app.tool.id == "pencil" and app.brush.type == BrushType.IMAGE then
             if currentAnimBrush ~= nil then
-                drawAnimation(currentAnimBrush)
+                draw.drawAnimation(currentAnimBrush, completeWithStatic)
             end
         end
     end
@@ -243,6 +190,15 @@ end
 
 local function showUseAnimDlg(tabData)
 
+    -- If dialog already opened in draw mode, return.
+    if drawMode then
+        return -1
+    end
+
+    -- Set global draw mode
+    drawMode = true
+    activateAnimatedMode(tabData)
+
     -- Local utility to display brushes names
     local function brushesNames(tab)
         local names = {}
@@ -257,6 +213,8 @@ local function showUseAnimDlg(tabData)
         onclose=exitAnimMode
     }
 
+    dlg.bounds = Rectangle(0, 0, 300, 150)
+
     dlg:color{ id="col", label="color", color=app.Color}
        :combobox{ 
             id="animBrushCbbox",
@@ -265,15 +223,35 @@ local function showUseAnimDlg(tabData)
             options=brushesNames(tabData),
             onchange=function(a)
                 currentAnimBrush = tabData[dlg.data["animBrushCbbox"]:gsub("%s+", "")]
+                dlg:modify{ 
+                    id="labelNbFramesAnim",
+                    activated=true,
+                    text=currentAnimBrush.nbCells
+                }
                 setAnimatedBrush(currentAnimBrush)
             end
         }
-        :shades{ }
-        :show{ wait=false }
-
-    -- Set global draw mode
-    drawMode = true
-    activateAnimatedMode(tabData)
+       :label{
+            id="labelNbFramesAnim",
+            label="Number of frames :",
+            activated=currentAnimBrush~=nil,
+            text=currentAnimBrush~=nil and tostring(currentAnimBrush.nbCells) or ""
+        }
+       :check{
+            id="completeStaticAnim",
+            label="Complete with static",
+            text="Complete all frames from the layer with the first frame from the animation",
+            selected=false,
+            onclick=function() 
+                completeWithStatic = dlg.data.completeStaticAnim
+            end
+       } 
+       :shades{ 
+            id="shadesAnimBrush",
+            mode="sort",
+            colors={Color{ r=58, g=120, b=135, a=255 }, Color{ r=110, g=35, b=195, a=255 }, Color{ r=15, g=190, b=130, a=255 }}
+        }
+       :show{ wait=false }
 
     
 end

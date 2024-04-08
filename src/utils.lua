@@ -27,4 +27,9 @@ function utils.getFirstElement(table)
     return nil
 end
 
+-- Check if the number of frames left < nbFrames
+function utils.isNbFramesEnough(frame, nbFrames)
+    return (#app.sprite.frames - frame.frameNumber + 1) >= nbFrames
+end
+
 return utils
