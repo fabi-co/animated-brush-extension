@@ -89,7 +89,6 @@ local function onChange(tabData)
 
         if currentAnimBrush ~= nil then
             local error, msg = draw.drawAnimation(currentAnimBrush, completeWithStatic, loopBack)
-
             if error ~= 0 then
                 app.alert(msg)
             end

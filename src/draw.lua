@@ -58,19 +58,16 @@ local function drawCompleteWithStatic(brushData)
     local beginIt      = 1
 
     if not(utils.isNbFramesLeftOk(app.frame, brushData.nbCells)) then
-        beginIt     = (lastFrameNb % #app.sprite.frames) + 1
-        lastFrameNb = #app.sprite.frames
+        beginIt     = lastFrameNb % #app.sprite.frames
+        lastFrameNb = #app.sprite.frames + 1
     end
 
     for i = beginIt, firstFrameNb - 1 do
-        print("1st loop")
-        print(i)
         local frame = app.sprite.frames[i]
         draw.drawImgOnCel(app.layer, frame, imgBytes, specs)
     end
 
     for i = lastFrameNb, #app.sprite.frames do
-        print("2nd loop")
         local frame = app.sprite.frames[i]
         draw.drawImgOnCel(app.layer, frame, imgBytes, specs)
     end
