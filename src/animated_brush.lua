@@ -191,6 +191,24 @@ local function onCbboxChange(ev, tabData)
     setAnimatedBrush(currentAnimBrush)
 end
 
+local function onCanvasPaint(ev)
+    if currentAnimBrush == nil then
+        return
+    end
+    
+    local gc       = ev.context
+    local prevData = currentAnimBrush.preview
+    local specs    = ImageSpec{
+        width            = prevData.width,
+        height           = prevData.height,
+        colorMode        = prevData.colorMode,
+        transparentColor = prevData.transparentColor
+    }
+    local imgBytes = utils.decode(prevData.bytes)
+    local img      = Image(specs)
+    img.bytes      = imgBytes
+    gc:drawImage(img, 0, 0)
+end
 ------------- ENTER / EXIT ANIM MODE ----------
 
 -- Activate anim mode
@@ -389,11 +407,16 @@ local function showUseAnimDlg(tabData, count)
             onClickSave(ev, tabData)
         end
        }
+       :separator{
+            text="Preview 1st frame"
+        }
        :canvas{
         id="canvasPreview",
         width=100,
         height=100,
-        onpaint=function(ev) print("paint") end
+        hexpand=false,
+        vexpand=false,
+        onpaint=onCanvasPaint
        }
        :show{ wait=false }
        
@@ -433,4 +456,7 @@ function init(plugin)
   end
   
   function exit(plugin)
+    if useAnimDlg ~= nil then
+        useAnimDlg:close()
+    end
   end
