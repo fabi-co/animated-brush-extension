@@ -1,6 +1,7 @@
 local draw       = require("src.draw")
 local utils      = require("src.utils")
 local processing = require("src.processing")
+local serializer = require("src.serializer")
 
 -- True if use animated mode is on
 local drawMode = false
@@ -324,6 +325,24 @@ local function showAddAnimDlg(tabData, count)
     end
 end
 
+local function showSettings(tabData, count)
+    local dlg = Dialog("Settings")
+    dlg:separator{
+            text=" IMPORT - EXPORT "
+        }
+        :button{
+            id="animExport",
+            text="Export",
+            onclick=function() end
+        }
+        :button{
+            id="animImport",
+            text="Import",
+            onclick=function() end
+        }
+        :show()
+end
+
 local function showUseAnimDlg(tabData, count)
     -- If dialog already opened in draw mode, return.
     if drawMode then
@@ -342,6 +361,14 @@ local function showUseAnimDlg(tabData, count)
     useAnimDlg.bounds = Rectangle(0, 0, 220, 300)
 
     useAnimDlg
+       :button{
+            id="animSettings",
+            text="Import/Export",
+            onclick=function() showSettings(tabData, count) end
+       }
+       :separator{
+            text=" Animation Settings"
+       }
        :combobox{ 
             id="animBrushCbbox",
             label="Animated brush :",
@@ -354,7 +381,6 @@ local function showUseAnimDlg(tabData, count)
        :check{
             id="completeStaticAnim",
             label="Draw anim 1 on other frames:",
-            -- text="Complete other frames with animation frame 1.",
             selected=false,
             onclick=function() 
                 completeWithStatic = useAnimDlg.data.completeStaticAnim
@@ -363,14 +389,13 @@ local function showUseAnimDlg(tabData, count)
        :check{
             id="loopBackAnim",
             label="Return frame 1 if not enough:",
-            -- text="Returns frame 1 if not enough frames left",
             selected=false,
             onclick=function() 
                 loopBack = useAnimDlg.data.loopBackAnim
             end
        }
        :separator{
-            text="Brush"
+            text=" Brush Settings"
        }
        :entry{
             id="entryNameAnim",
@@ -423,7 +448,7 @@ local function showUseAnimDlg(tabData, count)
         end
        }
        :separator{
-            text="Preview 1st frame"
+            text=" Preview 1st frame "
         }
        :canvas{
         id="canvasPreview",
@@ -434,7 +459,6 @@ local function showUseAnimDlg(tabData, count)
         onpaint=onCanvasPaint
        }
        :show{ wait=false }
-       
 end
 
 function init(plugin)  
