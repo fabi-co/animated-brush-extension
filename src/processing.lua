@@ -1,10 +1,21 @@
+-- Animated Brush Extension
+-- Made by Fabico
+--
+-- This file is released under the terms of the MIT license.
+-- Read LICENSE.txt for more information.
+
+-- Processing module
+
 local utils = require("src.utils")
 
 if processing then return end
 
 local processing = {}
 
--- Copy a selection from a Cel into a new image.
+---Copy a selection from a Cel into a new image.
+---@param selection Selection
+---@param celNb int
+---@return Image
 function processing.getAreaFromCel(selection, celNb)
     local img
 
@@ -24,7 +35,9 @@ function processing.getAreaFromCel(selection, celNb)
     return img
 end
 
--- Add new colors found in the image to colors table
+---Add new colors found in the image to colors table
+---@param img any
+---@param colors any
 function processing.colorsFromImg(img, colors)
     for pix in img:pixels() do
         if app.pixelColor.rgbaA(pix()) ~= 0 then
@@ -33,7 +46,10 @@ function processing.colorsFromImg(img, colors)
     end
 end
 
--- Replace color from an image
+---Replace color from an image
+---@param img Image
+---@param old Color
+---@param new Color
 function processing.replaceColor(img, old, new)
     for pix in img:pixels() do
         if pix() == old.rgbaPixel then
@@ -42,6 +58,13 @@ function processing.replaceColor(img, old, new)
     end
 end
 
+---Replace color from multiple images at once. Take an imgs dict bytes string
+---in parameter.
+---@param imgs any
+---@param specDict any
+---@param old any
+---@param new any
+---@return table
 function processing.replaceColorBatch(imgs, specDict, old, new)
     local imgsBytesReplaced = {}
     for k, v in pairs(imgs) do
@@ -60,6 +83,11 @@ function processing.replaceColorBatch(imgs, specDict, old, new)
     return imgsBytesReplaced
 end
 
+---Create a preview image which is the 1st frame from the animation.
+---If width or height > 100, the image is resized.
+---@param imgBytesEnc any
+---@param specDict any
+---@return unknown
 function processing.createPreview(imgBytesEnc, specDict)
     local specs = ImageSpec{
         width            = specDict.width,

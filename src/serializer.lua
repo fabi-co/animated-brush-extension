@@ -1,3 +1,10 @@
+-- Animated Brush Extension
+-- Made by Fabico
+--
+-- This file is released under the terms of the MIT license.
+-- Read LICENSE.txt for more information.
+
+-- Serializer module
 
 local serializer = {}
 

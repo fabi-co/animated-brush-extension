@@ -1,3 +1,9 @@
+-- Animated Brush Extension
+-- Made by Fabico
+--
+-- This file is released under the terms of the MIT license.
+-- Read LICENSE.txt for more information.
+
 -- Draw Module --
 
 local utils = require("src.utils")
@@ -6,7 +12,11 @@ if draw then return end
 
 local draw = {}
 
--- Draw an image on a given cel
+---Draw an image on a given cel
+---@param layer Layer
+---@param frame Frame
+---@param imgBytes Dict[str]
+---@param imgSpec Dict[str]
 function draw.drawImgOnCel(layer, frame, imgBytes, imgSpec)
     -- Gérer si nbFrames < cel + nbCels
 
@@ -38,6 +48,9 @@ function draw.drawImgOnCel(layer, frame, imgBytes, imgSpec)
     app.brush = prevBrush
 end
 
+---Draw first frame of animationsFrames on all frames from layer that aren't 
+---part of the animation.
+---@param brushData any
 local function drawCompleteWithStatic(brushData)
     -- All cells filled already, nothing to do
     if #app.sprite.frames == brushData.nbCells then
@@ -73,7 +86,11 @@ local function drawCompleteWithStatic(brushData)
     end
 end
 
--- Draw a brush animation on multiple cels from the current layer
+---Draw a brush animation on multiple cels from the current layer
+---@param brushData Dict
+---@param completeWithStatic boolean
+---@param loopBack boolean
+---@return integer, string
 function draw.drawAnimation(brushData, completeWithStatic, loopBack)
 
     -- No brush

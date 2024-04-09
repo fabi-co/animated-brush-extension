@@ -1,3 +1,9 @@
+-- Animated Brush Extension
+-- Made by Fabico
+--
+-- This file is released under the terms of the MIT license.
+-- Read LICENSE.txt for more information.
+
 local draw       = require("src.draw")
 local utils      = require("src.utils")
 local processing = require("src.processing")
@@ -24,7 +30,9 @@ local commandName = nil
 -- Id of the use animation dialog
 local useAnimDlg = nil
 
--- Returns false if there is no selection on canvas
+---If there is an active sprite and a selection, returns true to use
+---add anim.
+---@return boolean
 local function enableAddAnimBrush()
     local spr = app.sprite
     if spr == nil or spr.selection == nil or spr.selection.isEmpty then
@@ -33,8 +41,9 @@ local function enableAddAnimBrush()
     return true
 end
 
--- Set the tool to pencil and the brush image to the img of
--- brushData.
+--- Set the tool to pencil and the brush image to the img of
+--- brushData.
+---@param brushData Dict brush data dict
 local function setAnimatedBrush(brushData)
     if brushData == nil then
         return
@@ -67,7 +76,9 @@ end
 ------------------ EVENTS -------------------------
 ---------------------------------------------------
 
--- Function called when event on sprite happened
+--- Function called when event on sprite happened
+---@param tabData Dict dict of brush data dict
+---@return function
 local function onChange(tabData)
     return function(ev)
         if ev == nil or ev.fromUndo then
@@ -93,20 +104,27 @@ local function onChange(tabData)
     end
 end
 
+---Called when a command begins. Used to keep trace of last command name.
+---@param ev any
 local function onCommandBegin(ev)
     commandName = ev.name
 end
 
+---Called when a command ends.
+---@param ev any
 local function onCommandEnd(ev)
     commandName = nil
 end
 
+---Called when fg or bg color changed. Reinit currentanimBrush
+---beause we don't want those cha,ges to apply on animated brush.
 local function onFgBgColorChange()
     if currentAnimBrush ~= nil then
         setAnimatedBrush(currentAnimBrush)
     end
 end
 
+---Close useanimDlg when sprite is changed.
 local function onSiteChange()
     if app.sprite == nil then
         if useAnimDlg ~= nil then
@@ -115,6 +133,9 @@ local function onSiteChange()
     end
 end
 
+---Used to pick or change color from the animated brush.
+---Left click pick, right click change.
+---@param ev any
 local function onClickShade(ev)
     if ev.button == MouseButton.LEFT then
         app.fgColor = ev.color
@@ -141,6 +162,9 @@ local function onClickShade(ev)
     end
 end
 
+---Save the changes made at currentAnimBrush in tabData.
+---@param ev any
+---@param tabData Dict dict of brush data dict
 local function onClickSave(ev, tabData)
     if currentAnimBrush == nil then
         return
@@ -167,6 +191,9 @@ local function onClickSave(ev, tabData)
     }
 end
 
+---When change selection in useanim dialog, update what needs to be updated.
+---@param ev any
+---@param tabData Dict dict of brush data dict
 local function onCbboxChange(ev, tabData)
     currentAnimBrush = tabData[useAnimDlg.data["animBrushCbbox"]:gsub("%s+", "")]
     useAnimDlg:modify{ 
@@ -186,6 +213,8 @@ local function onCbboxChange(ev, tabData)
     setAnimatedBrush(currentAnimBrush)
 end
 
+---Draw first frame from animation on canvas dialog.
+---@param ev any
 local function onCanvasPaint(ev)
     if currentAnimBrush == nil then
         return
@@ -206,7 +235,9 @@ local function onCanvasPaint(ev)
 end
 ------------- ENTER / EXIT ANIM MODE ----------
 
--- Activate anim mode
+---Activate animation mode. Set all events and currentAnimBrush.
+---@param tabData Dict dict of brush data dict
+---@return integer
 local function activateAnimatedMode(tabData)
     local brushData  = utils.getFirstElement(tabData)
     currentAnimBrush = brushData
@@ -223,7 +254,8 @@ local function activateAnimatedMode(tabData)
     app.events:on("sitechange", onSiteChange)
 end
 
--- Exit anim mode
+---Exit animation mode. Remove all events and reinit global vars.
+---Set the brush to pencil point.
 local function exitAnimMode()
     drawMode         = false
     currentAnimBrush = nil
@@ -256,6 +288,9 @@ end
 ------------------ Dialogs -------------------------
 ----------------------------------------------------
 
+---Handle Add anim dialog
+---@param tabData Dict dict of brush data dict
+---@param count Dict dict containing 1 entry -> count (for reference passage)
 local function showAddAnimDlg(tabData, count)
 
     if not(enableAddAnimBrush()) then
@@ -325,6 +360,9 @@ local function showAddAnimDlg(tabData, count)
     end
 end
 
+---Settings fialog for import / export
+---@param tabData any
+---@param count any
 local function showSettings(tabData, count)
     local dlg = Dialog("Settings")
     dlg:separator{
@@ -343,10 +381,13 @@ local function showSettings(tabData, count)
         :show()
 end
 
+---Use anim dialog.
+---@param tabData Dict dict of brush data dict
+---@param count any Dict dict containing 1 entry -> count (for reference passage)
 local function showUseAnimDlg(tabData, count)
     -- If dialog already opened in draw mode, return.
     if drawMode then
-        return -1
+        return
     end
 
     -- Set global draw mode
