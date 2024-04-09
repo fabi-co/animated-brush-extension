@@ -40,10 +40,36 @@ end
 -- Returns only the keys from a lua table
 function utils.getKeys(t)
     local keys = {}
-    for k, _ in pairs(t) do
-        table.insert(keys, k)
-    end
+    for k, _ in pairs(t) do table.insert(keys, k) end
     return keys
+end
+
+-- Deep copy of a table
+function utils.deepCopyTable(t)
+    local tCopied={}
+    if type(t)=="table" then
+        for k, v in pairs(t) do tCopied[k] = utils.deepCopyTable(v) end
+    else
+        tCopied=t
+    end
+    return tCopied
+end
+
+-- Check if a value already exists in a table
+function utils.tabKeyExists(t, val)
+    for k, _ in pairs(t) do
+        if k == val then return true end
+    end
+    return false
+end
+
+-- Local utility to display brushes names
+function utils.getBrushesNames(tab)
+    local names = {}
+    for key, value in pairs(tab) do
+        table.insert(names, value.name)
+    end
+    return names
 end
 
 -- Check if the number of frames left < nbFrames
@@ -94,5 +120,5 @@ function utils.colorsToRGBAPixels(colors)
 
     return rgbaPixels
 end
-
+  
 return utils

@@ -112,6 +112,14 @@ local function onFgBgColorChange()
     end
 end
 
+local function onSiteChange()
+    if app.sprite == nil then
+        if useAnimDlg ~= nil then
+            useAnimDlg:close()
+        end
+    end
+end
+
 local function onClickShade(ev)
     if ev.button == MouseButton.LEFT then
         app.fgColor = ev.color
@@ -124,16 +132,44 @@ local function onClickShade(ev)
             colors=colors
         }
 
-        currentAnimBrush.imgs = processing.replaceColorBatch(
-            currentAnimBrush.imgs,
-            currentAnimBrush.specs,
+        brushCopy = utils.deepCopyTable(currentAnimBrush)
+        brushCopy.imgs = processing.replaceColorBatch(
+            brushCopy.imgs,
+            brushCopy.specs,
             ev.color,
             app.fgColor
         )
 
-        currentAnimBrush.colors = utils.colorsToRGBAPixels(colors)
-        setAnimatedBrush(currentAnimBrush)
+        brushCopy.colors = utils.colorsToRGBAPixels(colors)
+        currentAnimBrush = brushCopy
+        setAnimatedBrush(brushCopy)
     end
+end
+
+local function onClickSave(ev, tabData)
+    if currentAnimBrush == nil then
+        return
+    end
+
+    local prevName    = currentAnimBrush.name
+    local newName     = useAnimDlg.data.entryNameAnim
+    local prevNameKey = prevName:gsub("%s+", "")
+    local newNameKey  = newName:gsub("%s+", "")
+
+    if prevName ~= newName or #newName < 3 then
+        if utils.tabKeyExists(tabData, newNameKey) then
+            app.alert("This name is not valid or already exists, chose another one.")
+            return
+        end
+    end
+
+    currentAnimBrush.name = newName
+    tabData[prevNameKey]  = nil
+    tabData[newNameKey]   = currentAnimBrush
+    useAnimDlg:modify{
+        id      = "animBrushCbbox",
+        options = utils.getBrushesNames(tabData)
+    }
 end
 
 ------------- ENTER / EXIT ANIM MODE ----------
@@ -152,6 +188,7 @@ local function activateAnimatedMode(tabData)
     app.events:on("aftercommand", onCommandEnd)
     app.events:on("fgcolorchange", onFgBgColorChange)
     app.events:on("bgcolorchange", onFgBgColorChange)
+    app.events:on("sitechange", onSiteChange)
 end
 
 -- Exit anim mode
@@ -160,10 +197,13 @@ local function exitAnimMode()
     currentAnimBrush = nil
 
     if listenerCode > -1 then
+        if app.sprite ~= nil then
+            app.sprite.events:off(listenerCode)
+        end
         app.events:off(onCommandBegin)
         app.events:off(onCommandEnd)
         app.events:off(onFgBgColorChange)
-        app.sprite.events:off(listenerCode)
+        app.events:off(onSiteChange)
         listenerCode = -1
     end
 
@@ -184,11 +224,15 @@ end
 ------------------ Dialogs -------------------------
 ----------------------------------------------------
 
-local function showAddAnimDlg(tabData)
+local function showAddAnimDlg(tabData, count)
 
     if not(enableAddAnimBrush()) then
         print("No selected area")
         return
+    end
+
+    if useAnimDlg ~= nil then
+        useAnimDlg:close()
     end
 
     local frameNb  = app.frame.frameNumber
@@ -200,8 +244,8 @@ local function showAddAnimDlg(tabData)
         Dialog("ADD AN ANIMATED BRUSH"):label{id="addAnimLabel", text="ADD AN ANIMATED BRUSH."}
                 :separator()
                 :label{id="nameAddAnimBrushLabel", text="Name of the animated brush."}
-                :entry{id="nameAddAnimBrush", text = ""}
-                :button{id="addAnimBrush", text="Add brush"}
+                :entry{id="nameAddAnimBrush", text="Animation " ..tostring(count[1])}
+                :button{id="addAnimBrush", text="Add brush", focus=true}
                 :show().data
 
     if data.addAnimBrush then
@@ -228,6 +272,7 @@ local function showAddAnimDlg(tabData)
             }
         end
 
+        count[1] = count[1] + 1
         tabData[name:gsub("%s+", "")] = {
             ["imgs"]    = imgs,
             ["specs"]   = specs,
@@ -238,7 +283,7 @@ local function showAddAnimDlg(tabData)
     end
 end
 
-local function showUseAnimDlg(tabData)
+local function showUseAnimDlg(tabData, count)
 
     -- If dialog already opened in draw mode, return.
     if drawMode then
@@ -249,28 +294,19 @@ local function showUseAnimDlg(tabData)
     drawMode = true
     activateAnimatedMode(tabData)
 
-    -- Local utility to display brushes names
-    local function brushesNames(tab)
-        local names = {}
-        for key, value in pairs(tab) do
-            table.insert(names, value.name)
-        end
-        return names
-    end
-
     useAnimDlg = Dialog{
         title="USE AN ANIMATED BRUSH",
         onclose=exitAnimMode
     }
 
-    useAnimDlg.bounds = Rectangle(0, 0, 200, 150)
+    useAnimDlg.bounds = Rectangle(0, 0, 220, 150)
 
     useAnimDlg
        :combobox{ 
             id="animBrushCbbox",
-            label="Animated sprite",
+            label="Animated brush :",
             option="None",
-            options=brushesNames(tabData),
+            options=utils.getBrushesNames(tabData),
             onchange=function(a)
                 currentAnimBrush = tabData[useAnimDlg.data["animBrushCbbox"]:gsub("%s+", "")]
                 useAnimDlg:modify{ 
@@ -279,22 +315,22 @@ local function showUseAnimDlg(tabData)
                     text=currentAnimBrush.nbCells
                 }
                 setAnimatedBrush(currentAnimBrush)
+
                 useAnimDlg:modify{
                     id="shadesAnimBrush",
                     colors=utils.colorsFromInts(currentAnimBrush.colors)
                 }
+
+                useAnimDlg:modify{
+                    id="entryNameAnim",
+                    text=currentAnimBrush.name
+                }
             end
-        }
-       :label{
-            id="labelNbFramesAnim",
-            label="Number of frames :",
-            activated=currentAnimBrush~=nil,
-            text=currentAnimBrush~=nil and tostring(currentAnimBrush.nbCells) or ""
         }
        :check{
             id="completeStaticAnim",
-            label="Complete with static",
-            text="Complete other frames with animation frame 1.",
+            label="Draw anim 1 on other frames:",
+            -- text="Complete other frames with animation frame 1.",
             selected=false,
             onclick=function() 
                 completeWithStatic = useAnimDlg.data.completeStaticAnim
@@ -302,13 +338,28 @@ local function showUseAnimDlg(tabData)
        } 
        :check{
             id="loopBackAnim",
-            label="Loop back",
-            text="Loop frame 1 if not enough frames left",
+            label="Return frame 1 if not enough:",
+            -- text="Returns frame 1 if not enough frames left",
             selected=false,
             onclick=function() 
                 loopBack = useAnimDlg.data.loopBackAnim
             end
-       } 
+       }
+       :separator{
+            text="Brush"
+       }
+       :entry{
+            id="entryNameAnim",
+            label="name",
+            activated=currentAnimBrush~=nil,
+            text=currentAnimBrush~=nil and tostring(currentAnimBrush.name) or ""
+       }
+       :label{
+            id="labelNbFramesAnim",
+            label="Number of frames:",
+            activated=currentAnimBrush~=nil,
+            text=currentAnimBrush~=nil and tostring(currentAnimBrush.nbCells) or ""
+        }
        :shades{ 
             id="shadesAnimBrush",
             label="colors",
@@ -316,6 +367,16 @@ local function showUseAnimDlg(tabData)
             colors=currentAnimBrush~=nil and utils.colorsFromInts(currentAnimBrush.colors) or {},
             onclick=onClickShade
         }
+       :button{
+        id="saveChangeAnim",
+        text="Save",
+        selected="false",
+        focus="false",
+        activated=currentAnimBrush~=nil,
+        onclick=function(ev)
+            onClickSave(ev, tabData)
+        end
+       } 
        :show{ wait=false }
        
 end
@@ -325,7 +386,8 @@ function init(plugin)
     -- our plugin (these fields are saved between sessions)
 
     if plugin.preferences.data == nil then
-        plugin.preferences.data = {}
+        plugin.preferences.data  = {}
+        plugin.preferences.count = {0}
     end
 
     --
@@ -335,7 +397,7 @@ function init(plugin)
       group="edit_new",
       onenabled=enableAddAnimBrush,
       onclick=function()
-        showAddAnimDlg(plugin.preferences.data)
+        showAddAnimDlg(plugin.preferences.data, plugin.preferences.count)
       end
     }
 
@@ -344,8 +406,9 @@ function init(plugin)
       id="use_animated_brush",
       title="Use animated brush",
       group="edit_new",
+      onenabled=app.sprite~=nil,
       onclick=function()
-        showUseAnimDlg(plugin.preferences.data)
+        showUseAnimDlg(plugin.preferences.data, plugin.preferences.count)
       end
     }
 
