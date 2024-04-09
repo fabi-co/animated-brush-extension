@@ -172,6 +172,25 @@ local function onClickSave(ev, tabData)
     }
 end
 
+local function onCbboxChange(ev, tabData)
+    currentAnimBrush = tabData[useAnimDlg.data["animBrushCbbox"]:gsub("%s+", "")]
+    useAnimDlg:modify{ 
+        id="labelNbFramesAnim",
+        activated=true,
+        text=currentAnimBrush.nbCells
+    }
+    useAnimDlg:modify{
+        id="shadesAnimBrush",
+        colors=utils.colorsFromInts(currentAnimBrush.colors)
+    }
+    useAnimDlg:modify{
+        id="entryNameAnim",
+        text=currentAnimBrush.name
+    }
+    useAnimDlg:repaint()
+    setAnimatedBrush(currentAnimBrush)
+end
+
 ------------- ENTER / EXIT ANIM MODE ----------
 
 -- Activate anim mode
@@ -272,19 +291,28 @@ local function showAddAnimDlg(tabData, count)
             }
         end
 
+        local previewImg = processing.createPreview(imgs[1], specs[1])
+        local preview    = {
+            ["width"]            = previewImg.spec.width, 
+            ["height"]           = previewImg.spec.height,
+            ["colorMode"]        = previewImg.spec.colorMode, 
+            ["transparentColor"] = previewImg.spec.transparentColor,
+            ["bytes"]            = utils.encode(previewImg.bytes)
+    }
+
         count[1] = count[1] + 1
         tabData[name:gsub("%s+", "")] = {
             ["imgs"]    = imgs,
             ["specs"]   = specs,
             ["nbCells"] = nbFrames,
             ["name"]    = name,
-            ["colors"]  = utils.getKeys(colors)
+            ["colors"]  = utils.getKeys(colors),
+            ["preview"] = preview
         }
     end
 end
 
 local function showUseAnimDlg(tabData, count)
-
     -- If dialog already opened in draw mode, return.
     if drawMode then
         return -1
@@ -299,7 +327,7 @@ local function showUseAnimDlg(tabData, count)
         onclose=exitAnimMode
     }
 
-    useAnimDlg.bounds = Rectangle(0, 0, 220, 150)
+    useAnimDlg.bounds = Rectangle(0, 0, 220, 300)
 
     useAnimDlg
        :combobox{ 
@@ -307,24 +335,8 @@ local function showUseAnimDlg(tabData, count)
             label="Animated brush :",
             option="None",
             options=utils.getBrushesNames(tabData),
-            onchange=function(a)
-                currentAnimBrush = tabData[useAnimDlg.data["animBrushCbbox"]:gsub("%s+", "")]
-                useAnimDlg:modify{ 
-                    id="labelNbFramesAnim",
-                    activated=true,
-                    text=currentAnimBrush.nbCells
-                }
-                setAnimatedBrush(currentAnimBrush)
-
-                useAnimDlg:modify{
-                    id="shadesAnimBrush",
-                    colors=utils.colorsFromInts(currentAnimBrush.colors)
-                }
-
-                useAnimDlg:modify{
-                    id="entryNameAnim",
-                    text=currentAnimBrush.name
-                }
+            onchange=function(ev)
+                onCbboxChange(ev, tabData)
             end
         }
        :check{
@@ -376,7 +388,13 @@ local function showUseAnimDlg(tabData, count)
         onclick=function(ev)
             onClickSave(ev, tabData)
         end
-       } 
+       }
+       :canvas{
+        id="canvasPreview",
+        width=100,
+        height=100,
+        onpaint=function(ev) print("paint") end
+       }
        :show{ wait=false }
        
 end

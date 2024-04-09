@@ -60,4 +60,24 @@ function processing.replaceColorBatch(imgs, specDict, old, new)
     return imgsBytesReplaced
 end
 
+function processing.createPreview(imgBytesEnc, specDict)
+    local specs = ImageSpec{
+        width            = specDict.width,
+        height           = specDict.height,
+        colorMode        = specDict.colorMode,
+        transparentColor = specDict.transparentColor
+    }
+    local imgBytes = utils.decode(imgBytesEnc)
+    local img      = Image(specs)
+    img.bytes      = imgBytes
+
+    local preview = img:clone()
+    if preview.width > 100 or preview.height > 100 then
+        local w = math.min(preview.width, 100)
+        local h = math.min(preview.height, 100)
+        preview:resize(w, h)
+    end
+    return preview
+end
+
 return processing
