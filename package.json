@@ -12,7 +12,10 @@
     "categories": [ "Scripts" ],
     "contributes": {
         "scripts": [
-            { "path": "./src/animated_brush.lua" } 
-        ]
+            { "path": "./src/main.lua" } 
+        ],
+        "keys": [
+            { "path": "default.aseprite-keys" }
+          ]
     }
 }

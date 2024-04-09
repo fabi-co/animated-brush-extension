@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<keyboard version="1">
+    <commands>
+        <key command="new_animated_brush" shortcut="Space+K" />
+        <key command="use_animated_brush" shortcut="Space+L" />
+    </commands>
+</keyboard>
