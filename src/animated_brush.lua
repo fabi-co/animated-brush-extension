@@ -69,11 +69,7 @@ end
 -- Function called when event on sprite happened
 local function onChange(tabData)
     return function(ev)
-        if ev == nil then
-            return -1
-        end
-
-        if ev.fromUndo then
+        if ev == nil or ev.fromUndo then
             return -1
         end
 
@@ -93,7 +89,6 @@ local function onChange(tabData)
                 app.alert(msg)
             end
         end
-
     end
 end
 
@@ -404,6 +399,27 @@ local function showUseAnimDlg(tabData, count)
         activated=currentAnimBrush~=nil,
         onclick=function(ev)
             onClickSave(ev, tabData)
+        end
+       }
+       :button{
+        id="deleteAnim",
+        text="Delete",
+        selected="false",
+        focus="false",
+        activated=currentAnimBrush~=nil,
+        onclick=function(ev)
+            if currentAnimBrush == nil then
+                return
+            end
+            local dlg = Dialog("Confirm"):button{id="confirm", text="Confirm the delete ? No backward."}
+                        :show()
+
+            if dlg.data.confirm then
+                local nameKey     = currentAnimBrush.name:gsub("%s+", "")
+                tabData[nameKey]  = nil
+                useAnimDlg:close()
+                showUseAnimDlg(tabData, count)
+            end
         end
        }
        :separator{
