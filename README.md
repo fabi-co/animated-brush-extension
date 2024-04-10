@@ -2,6 +2,8 @@
 
 This is an animated brush extension for Aseprite. With it you can copy through multiple frame and use it as brush with some useful features.
 
+Quick demo : https://www.youtube.com/watch?v=eXfhMy3lm04
+
 ## Features
 
 * Add and save new custom animated brushes
