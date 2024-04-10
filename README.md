@@ -25,7 +25,7 @@ To add a new animated brush :
 
 To use an animated brush: Edit -> Use animated brush (shortkey space+L).
 
-<div style="text-align:center">
+<div align="center">
     <img src="./resources/use_animated_brush.jpg" alt="The dialog box for use animated brush" width="400" height="500"/>
 </div>
 
