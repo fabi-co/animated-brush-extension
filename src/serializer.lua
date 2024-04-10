@@ -5,6 +5,7 @@
 -- Read LICENSE.txt for more information.
 
 -- Serializer module
+local json = require("libs.json") 
 
 local serializer = {}
 
