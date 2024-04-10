@@ -22,7 +22,7 @@ end
 
 ---Write tabData in json file.
 ---@param tabData table
----@param fn String filename
+---@param fn string filename
 ---@return boolean error
 ---@return string error message
 function serializer.writeInFile(tabData, fn)
@@ -44,6 +44,30 @@ function serializer.writeInFile(tabData, fn)
 
     file:close()
     return true, ""
+end
+
+---Read a json file representing a tabData.
+---@param fn string Filename
+---@return table - deserialized json table
+---@return string - Msg error
+function serializer.readData(fn)
+    if app.fs.fileExtension(fn) ~= "json" and app.fs.fileExtension(fn) ~= "JSON" then
+        return nil, "This is not a json file"
+    end
+
+    local file, err = io.open(fn, "r")
+    if not file then
+        return nil, "Error opening the file : " .. err
+    end
+
+    local strData = file:read("a")
+    if not strData then
+        file:close()
+        return nil, "A problem occured to read the file"
+    end
+    file:close()
+
+    return serializer.deserialize(strData), ""
 end
 
 return serializer

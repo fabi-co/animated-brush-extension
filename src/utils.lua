@@ -88,6 +88,15 @@ function utils.tabKeyExists(t, val)
     return false
 end
 
+---Add all elements from t2 to t1 if key doesn't exists
+function utils.mergeTables(t1, t2)
+    for k, v in pairs(t2) do
+        if not(t1[k]) then
+            t1[k] = v
+        end
+    end
+end
+
 
 ---Local utility to display brushes names
 ---@param tab table

@@ -234,12 +234,26 @@ local function onCanvasPaint(ev)
     gc:drawImage(img, 0, 0)
 end
 
-
+---Handle export to json file action
+---@param tabData table
+---@param fn string filename
 local function onExport(tabData, fn)
     local ok, err = serializer.writeInFile(tabData, fn)
     if not ok then
         app.alert(err)
     end
+end
+
+
+local function onImport(tabData, fn, dlg)
+    local data, err = serializer.readData(fn)
+    if not data then
+        app.alert(err)
+    end
+
+    utils.mergeTables(tabData, data)
+    useAnimDlg:close()
+    dlg:close()
 end
 
 ------------- ENTER / EXIT ANIM MODE ----------
@@ -382,22 +396,22 @@ local function showConfigDlg(tabData, count)
             text=" CONFIG "
         }
         :file{ id="animExport",
-          label="Export brushes : ",
+          label="Export anim. brushes : ",
           title="Export",
           open=false,
           save=true,
           filename="exported_anim.json",
-          filetypes={ ".json" },
+          filetypes={ "json" },
           onchange=function() onExport(tabData, dlg.data.animExport) end
         }
         :file{ id="animImport",
-          label="Export brushes : ",
-          title="Export",
+          label="Import anim. brushes : ",
+          title="Import",
           open=true,
           save=false,
           filename="exported_anim.json",
-          filetypes={ ".json" },
-          onchange=function() onExport(tabData) end
+          filetypes={ "json" },
+          onchange=function() onImport(tabData, dlg.data.animImport, dlg) end
         }
         :show()
 end
