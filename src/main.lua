@@ -24,6 +24,9 @@ local completeWithStatic = false
 -- Flag for the animation to loop frame 1 if not enough frames left
 local loopBack = false
 
+-- Flag that determines if the data is reset on export
+local resetOnExport = false
+
 -- Use to monitor the name of last command used
 local commandName = nil
 
@@ -237,11 +240,19 @@ end
 ---Handle export to json file action
 ---@param tabData table
 ---@param fn string filename
-local function onExport(tabData, fn)
+local function onExport(tabData, fn, dlg)
     local ok, err = serializer.writeInFile(tabData, fn)
     if not ok then
         app.alert(err)
+        return
     end
+
+    if resetOnExport then
+        utils.resetTab(tabData)
+    end
+
+    useAnimDlg:close()
+    dlg:close()
 end
 
 
@@ -249,6 +260,7 @@ local function onImport(tabData, fn, dlg)
     local data, err = serializer.readData(fn)
     if not data then
         app.alert(err)
+        return
     end
 
     utils.mergeTables(tabData, data)
@@ -395,17 +407,25 @@ local function showConfigDlg(tabData, count)
     dlg:separator{
             text=" CONFIG "
         }
+        :check{
+            id="checkExportReset",
+            label="Reset local data when export :",
+            selected=false,
+            onclick=function()
+                resetOnExport = dlg.data.checkExportReset
+            end
+        }
         :file{ id="animExport",
-          label="Export anim. brushes : ",
+          label="Export animated brushes : ",
           title="Export",
           open=false,
           save=true,
           filename="exported_anim.json",
           filetypes={ "json" },
-          onchange=function() onExport(tabData, dlg.data.animExport) end
+          onchange=function() onExport(tabData, dlg.data.animExport, dlg) end
         }
         :file{ id="animImport",
-          label="Import anim. brushes : ",
+          label="Import animated brushes : ",
           title="Import",
           open=true,
           save=false,

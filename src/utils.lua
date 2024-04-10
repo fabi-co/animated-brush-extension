@@ -97,6 +97,12 @@ function utils.mergeTables(t1, t2)
     end
 end
 
+function utils.resetTab(t)
+    for k, v in pairs(t) do
+        t[k] = nil
+    end
+end
+
 
 ---Local utility to display brushes names
 ---@param tab table
