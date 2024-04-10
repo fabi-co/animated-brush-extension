@@ -6,8 +6,6 @@
 
 -- Serializer module
 
-local json = require("libs.json")
-
 local serializer = {}
 
 -- Serialize lua table
