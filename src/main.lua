@@ -44,8 +44,8 @@ local function enableAddAnimBrush()
     return true
 end
 
---- Set the tool to pencil and the brush image to the img of
---- brushData.
+---Set the tool to pencil and the brush image to the img of
+---brushData.
 ---@param brushData Dict brush data dict
 local function setAnimatedBrush(brushData)
     if brushData == nil then
@@ -151,7 +151,7 @@ local function onClickShade(ev)
             colors=colors
         }
 
-        brushCopy = utils.deepCopyTable(currentAnimBrush)
+        local brushCopy = utils.deepCopyTable(currentAnimBrush)
         brushCopy.imgs = processing.replaceColorBatch(
             brushCopy.imgs,
             brushCopy.specs,
@@ -214,6 +214,37 @@ local function onCbboxChange(ev, tabData)
     }
     useAnimDlg:repaint()
     setAnimatedBrush(currentAnimBrush)
+end
+
+---Flip images from current brush horizontally
+local function onClickFlipH()
+    if not currentAnimBrush then return end
+
+    local brushCopy = utils.deepCopyTable(currentAnimBrush)
+    brushCopy.imgs = processing.flipBatch(
+        brushCopy.imgs,
+        brushCopy.specs,
+        FlipType.HORIZONTAL
+    )
+
+    currentAnimBrush = brushCopy
+    setAnimatedBrush(brushCopy)
+end
+
+
+---Flip images from current brush vertically
+local function onClickFlipV()
+    if not currentAnimBrush then return end
+
+    local brushCopy = utils.deepCopyTable(currentAnimBrush)
+    brushCopy.imgs = processing.flipBatch(
+        brushCopy.imgs,
+        brushCopy.specs,
+        FlipType.VERTICAL
+    )
+
+    currentAnimBrush = brushCopy
+    setAnimatedBrush(brushCopy)
 end
 
 ---Draw first frame from animation on canvas dialog.
@@ -505,6 +536,16 @@ local function showUseAnimDlg(tabData, count)
             activated=currentAnimBrush~=nil,
             text=currentAnimBrush~=nil and tostring(currentAnimBrush.nbCells) or ""
         }
+       :button{
+            id="flipBrushH",
+            text="Flip H",
+            onclick=function() onClickFlipH() end
+       }
+       :button{
+            id="flipBrushH",
+            text="Flip V",
+            onclick=function() onClickFlipV() end
+       }
        :shades{ 
             id="shadesAnimBrush",
             label="colors",

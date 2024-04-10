@@ -83,6 +83,29 @@ function processing.replaceColorBatch(imgs, specDict, old, new)
     return imgsBytesReplaced
 end
 
+---Flip all images horizontally or vertically
+---@param imgs any
+---@param specDict any
+---@param flipT FlipType
+---@return table
+function processing.flipBatch(imgs, specDict, flipT)
+    local imgsBytesReplaced = {}
+    for k, v in pairs(imgs) do
+        local specs = ImageSpec{
+            width            = specDict[k].width,
+            height           = specDict[k].height,
+            colorMode        = specDict[k].colorMode,
+            transparentColor = specDict[k].transparentColor
+        }
+        local imgBytes = utils.decode(imgs[k])
+        local img      = Image(specs)
+        img.bytes      = imgBytes
+        img:flip(flipT)
+        imgsBytesReplaced[k] = utils.encode(img.bytes)
+    end
+    return imgsBytesReplaced
+end
+
 ---Create a preview image which is the 1st frame from the animation.
 ---If width or height > 100, the image is resized.
 ---@param imgBytesEnc any
