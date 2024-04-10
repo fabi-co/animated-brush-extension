@@ -79,6 +79,37 @@ end
 ------------------ EVENTS -------------------------
 ---------------------------------------------------
 
+---Flip images from current brush horizontally
+local function onClickFlipH()
+    if not currentAnimBrush then return end
+
+    local brushCopy = utils.deepCopyTable(currentAnimBrush)
+    brushCopy.imgs = processing.flipBatch(
+        brushCopy.imgs,
+        brushCopy.specs,
+        FlipType.HORIZONTAL
+    )
+
+    currentAnimBrush = brushCopy
+    setAnimatedBrush(brushCopy)
+end
+
+
+---Flip images from current brush vertically
+local function onClickFlipV()
+    if not currentAnimBrush then return end
+
+    local brushCopy = utils.deepCopyTable(currentAnimBrush)
+    brushCopy.imgs = processing.flipBatch(
+        brushCopy.imgs,
+        brushCopy.specs,
+        FlipType.VERTICAL
+    )
+
+    currentAnimBrush = brushCopy
+    setAnimatedBrush(brushCopy)
+end
+
 --- Function called when event on sprite happened
 ---@param tabData Dict dict of brush data dict
 ---@return function
@@ -108,9 +139,18 @@ local function onChange(tabData)
 end
 
 ---Called when a command begins. Used to keep trace of last command name.
+---Catch flip brush event when use anim mode on.
 ---@param ev any
 local function onCommandBegin(ev)
     commandName = ev.name
+    if ev.name == "ChangeBrush" and useAnimDlg and currentAnimBrush then
+        ev.stopPropagation()
+        if ev.params.change == "flip-x" then
+            onClickFlipH()
+        elseif ev.params.change == "flip-y" then
+            onClickFlipV()
+        end
+    end
 end
 
 ---Called when a command ends.
@@ -214,37 +254,6 @@ local function onCbboxChange(ev, tabData)
     }
     useAnimDlg:repaint()
     setAnimatedBrush(currentAnimBrush)
-end
-
----Flip images from current brush horizontally
-local function onClickFlipH()
-    if not currentAnimBrush then return end
-
-    local brushCopy = utils.deepCopyTable(currentAnimBrush)
-    brushCopy.imgs = processing.flipBatch(
-        brushCopy.imgs,
-        brushCopy.specs,
-        FlipType.HORIZONTAL
-    )
-
-    currentAnimBrush = brushCopy
-    setAnimatedBrush(brushCopy)
-end
-
-
----Flip images from current brush vertically
-local function onClickFlipV()
-    if not currentAnimBrush then return end
-
-    local brushCopy = utils.deepCopyTable(currentAnimBrush)
-    brushCopy.imgs = processing.flipBatch(
-        brushCopy.imgs,
-        brushCopy.specs,
-        FlipType.VERTICAL
-    )
-
-    currentAnimBrush = brushCopy
-    setAnimatedBrush(brushCopy)
 end
 
 ---Draw first frame from animation on canvas dialog.
