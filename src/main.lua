@@ -233,6 +233,15 @@ local function onCanvasPaint(ev)
     img.bytes      = imgBytes
     gc:drawImage(img, 0, 0)
 end
+
+
+local function onExport(tabData, fn)
+    local ok, err = serializer.writeInFile(tabData, fn)
+    if not ok then
+        app.alert(err)
+    end
+end
+
 ------------- ENTER / EXIT ANIM MODE ----------
 
 ---Activate animation mode. Set all events and currentAnimBrush.
@@ -281,14 +290,17 @@ local function exitAnimMode()
         patternOrigin = app.brush.patternOrigin,
         image = nil
     }
-    useAnimDlg = nil
+    useAnimDlg         = nil
+    completeWithStatic = false
+    loopBack           = false
 end
 
 ----------------------------------------------------
 ------------------ Dialogs -------------------------
 ----------------------------------------------------
 
----Handle Add anim dialog
+---Handle Add anim dialog. Available only if there is a selection and an active sprite.
+---Copy the images from the selected cells in tabData.
 ---@param tabData Dict dict of brush data dict
 ---@param count Dict dict containing 1 entry -> count (for reference passage)
 local function showAddAnimDlg(tabData, count)
@@ -346,7 +358,7 @@ local function showAddAnimDlg(tabData, count)
             ["colorMode"]        = previewImg.spec.colorMode, 
             ["transparentColor"] = previewImg.spec.transparentColor,
             ["bytes"]            = utils.encode(previewImg.bytes)
-    }
+        }
 
         count[1] = count[1] + 1
         tabData[name:gsub("%s+", "")] = {
@@ -363,20 +375,29 @@ end
 ---Settings fialog for import / export
 ---@param tabData any
 ---@param count any
-local function showSettings(tabData, count)
-    local dlg = Dialog("Settings")
+local function showConfigDlg(tabData, count)
+    local dlg = Dialog("Config")
+    dlg.bounds = Rectangle(50, 50, 200, 100)
     dlg:separator{
-            text=" IMPORT - EXPORT "
+            text=" CONFIG "
         }
-        :button{
-            id="animExport",
-            text="Export",
-            onclick=function() end
+        :file{ id="animExport",
+          label="Export brushes : ",
+          title="Export",
+          open=false,
+          save=true,
+          filename="exported_anim.json",
+          filetypes={ ".json" },
+          onchange=function() onExport(tabData, dlg.data.animExport) end
         }
-        :button{
-            id="animImport",
-            text="Import",
-            onclick=function() end
+        :file{ id="animImport",
+          label="Export brushes : ",
+          title="Export",
+          open=true,
+          save=false,
+          filename="exported_anim.json",
+          filetypes={ ".json" },
+          onchange=function() onExport(tabData) end
         }
         :show()
 end
@@ -404,8 +425,8 @@ local function showUseAnimDlg(tabData, count)
     useAnimDlg
        :button{
             id="animSettings",
-            text="Import/Export",
-            onclick=function() showSettings(tabData, count) end
+            text="Config",
+            onclick=function() showConfigDlg(tabData, count) end
        }
        :separator{
             text=" Animation Settings"

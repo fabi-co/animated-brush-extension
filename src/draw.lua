@@ -4,7 +4,9 @@
 -- This file is released under the terms of the MIT license.
 -- Read LICENSE.txt for more information.
 
--- Draw Module --
+-- Draw Module
+-- Contains functions to handle drawing on a cell or multiple cells at once
+-- with multiple options.
 
 local utils = require("src.utils")
 

@@ -6,26 +6,44 @@
 
 -- Serializer module
 
+local json = require("libs.json")
+
 local serializer = {}
 
 -- Serialize lua table
-function serializer.serialize(tbl)
-    local str = "{"
-    local first = true
-    for k, v in pairs(tbl) do
-        if not first then
-            str = str .. ","
-        else
-            first = false
-        end
-        str = str .. "[" .. string.format("%q", k) .. "]=" .. (type(v) == "table" and serializer.serialize(v) or string.format("%q", v))
-    end
-    return str .. "}"
+function serializer.serialize(tabData)
+   return json.encode(tabData)
 end
 
 -- Deserialize lua table
 function serializer.deserialize(str)
-    return assert(load("return " .. str))()
+    return json.decode(str)
+end
+
+---Write tabData in json file.
+---@param tabData table
+---@param fn String filename
+---@return boolean error
+---@return string error message
+function serializer.writeInFile(tabData, fn)
+    if app.fs.fileExtension(fn) ~= "json" and app.fs.fileExtension(fn) ~= "JSON" then
+        return false, "This is not a json file"
+    end
+
+    local file, err = io.open(fn, "w")
+    if not file then
+        return false, "Error opening the file : " .. err
+    end
+
+    local jsoned  = serializer.serialize(tabData) 
+    local ok, err = file:write(jsoned)
+    if not ok then
+        file:close()  -- Close the file before returning
+        return false, "Error writing to file:" .. err
+    end
+
+    file:close()
+    return true, ""
 end
 
 return serializer

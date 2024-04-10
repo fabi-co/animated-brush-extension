@@ -21,7 +21,7 @@ if utils then return end
 local utils = {}
 
 
----Encode bytes to hexadecimal
+---Encode bytes to hexadecimal str
 ---@param bytes bytes
 ---@return string representation of bytes
 function utils.encode(bytes)
