@@ -535,7 +535,7 @@ local function showUseAnimDlg(tabData, count)
        }
        :entry{
             id="entryNameAnim",
-            label="name",
+            label="Name:",
             activated=currentAnimBrush~=nil,
             text=currentAnimBrush~=nil and tostring(currentAnimBrush.name) or ""
        }
@@ -557,7 +557,7 @@ local function showUseAnimDlg(tabData, count)
        }
        :shades{ 
             id="shadesAnimBrush",
-            label="colors",
+            label="Colors:",
             mode="sort",
             colors=currentAnimBrush~=nil and utils.colorsFromInts(currentAnimBrush.colors) or {},
             onclick=onClickShade
