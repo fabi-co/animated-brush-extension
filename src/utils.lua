@@ -90,11 +90,14 @@ end
 
 ---Add all elements from t2 to t1 if key doesn't exists
 function utils.mergeTables(t1, t2)
+    local i = 0
     for k, v in pairs(t2) do
         if not(t1[k]) then
+            i = i + 1
             t1[k] = v
         end
     end
+    return i
 end
 
 function utils.resetTab(t)

@@ -296,14 +296,15 @@ local function onExport(tabData, fn, dlg)
 end
 
 
-local function onImport(tabData, fn, dlg)
+local function onImport(tabData, count, fn, dlg)
     local data, err = serializer.readData(fn)
     if not data then
         app.alert(err)
         return
     end
 
-    utils.mergeTables(tabData, data)
+    local nbAdded = utils.mergeTables(tabData, data)
+    count[1] = count[1] + nbAdded
     useAnimDlg:close()
     dlg:close()
 end
@@ -400,6 +401,11 @@ local function showAddAnimDlg(tabData, count)
             return
         end
 
+        if utils.tabKeyExists(tabData, name:gsub("%s+", "")) then
+            app.alert("This name is not valid or already exists, chose another one.")
+            return
+        end
+
         local imgs   = {}
         local specs  = {}
         local colors = {}
@@ -471,7 +477,7 @@ local function showConfigDlg(tabData, count)
           save=false,
           filename="exported_anim.json",
           filetypes={ "json" },
-          onchange=function() onImport(tabData, dlg.data.animImport, dlg) end
+          onchange=function() onImport(tabData, count, dlg.data.animImport, dlg) end
         }
         :show()
 end
