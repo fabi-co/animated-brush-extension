@@ -19,6 +19,10 @@ Quick demo : https://www.youtube.com/watch?v=eXfhMy3lm04
 
 ## Usage
 
+<div align="center">
+    <img src="./resources/demo_quicky_3.gif" alt="Quick demo" />
+</div>
+
 To add a new animated brush :
 * Select the zone on the sprite contianing the animation
 * Select the cells containing the animation
@@ -26,10 +30,6 @@ To add a new animated brush :
 * Valid after potentially changing the name
 
 To use an animated brush: Edit -> Use animated brush (shortkey space+L).
-
-<div align="center">
-    <img src="./resources/use_animated_brush.jpg" alt="The dialog box for use animated brush" width="400" height="500"/>
-</div>
 
 Once the dialog box is activated, you can directly use the animated brush.
 

@@ -115,21 +115,21 @@ end
 ---@return function
 local function onChange(tabData)
     return function(ev)
-        if ev == nil or ev.fromUndo then
-            return -1
+        if not ev or ev.fromUndo then
+            return
         end
 
-        if commandName ~= nil and #commandName > 0 then
-            return -1
+        if commandName and #commandName > 0 then
+            return
         end
 
         if app.tool.id ~= "pencil" or app.brush.type ~= BrushType.IMAGE then
-            if useAnimDlg ~= nil then
+            if useAnimDlg then
                 useAnimDlg:close()
             end
         end
 
-        if currentAnimBrush ~= nil then
+        if currentAnimBrush then
             local error, msg = draw.drawAnimation(currentAnimBrush, completeWithStatic, loopBack)
             if error ~= 0 then
                 app.alert(msg)
@@ -156,6 +156,9 @@ end
 ---Called when a command ends.
 ---@param ev any
 local function onCommandEnd(ev)
+    -- if commandName == "undo_anim_brush" then
+    --     app.undo()
+    -- end
     commandName = nil
 end
 
@@ -169,8 +172,8 @@ end
 
 ---Close useanimDlg when sprite is changed.
 local function onSiteChange()
-    if app.sprite == nil then
-        if useAnimDlg ~= nil then
+    if not app.sprite then
+        if useAnimDlg then
             useAnimDlg:close()
         end
     end
@@ -614,8 +617,6 @@ local function showUseAnimDlg(tabData, count)
 end
 
 function init(plugin)  
-    -- we can use "plugin.preferences" as a table with fields for
-    -- our plugin (these fields are saved between sessions)
 
     if plugin.preferences.data == nil then
         plugin.preferences.data  = {}
@@ -624,30 +625,36 @@ function init(plugin)
 
     --
     plugin:newCommand{
-      id="new_animated_brush",
-      title="New animated brush",
-      group="edit_new",
-      onenabled=enableAddAnimBrush,
-      onclick=function()
+        id="new_animated_brush",
+        title="New animated brush",
+        group="edit_new",
+        onenabled=enableAddAnimBrush,
+        onclick=function()
         showAddAnimDlg(plugin.preferences.data, plugin.preferences.count)
-      end
+        end
+    }
+    --
+    plugin:newCommand{
+        id="use_animated_brush",
+        title="Use animated brush",
+        group="edit_new",
+        onenabled=app.sprite~=nil,
+        onclick=function()
+        showUseAnimDlg(plugin.preferences.data, plugin.preferences.count)
+        end
     }
 
     --
     plugin:newCommand{
-      id="use_animated_brush",
-      title="Use animated brush",
-      group="edit_new",
-      onenabled=app.sprite~=nil,
-      onclick=function()
-        showUseAnimDlg(plugin.preferences.data, plugin.preferences.count)
-      end
+        id="undo_anim_brush",
+        groupe="edit_new",
+        onclick=function() end
     }
 
   end
   
-  function exit(plugin)
+function exit(plugin)
     if useAnimDlg ~= nil then
         useAnimDlg:close()
     end
-  end
+end
