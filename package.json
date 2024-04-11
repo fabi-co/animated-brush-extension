@@ -8,7 +8,7 @@
                 "url": "https://mastodon.social/@fabico" },
     "contributors": [ ],
     "publisher": "Fabico",
-    "license": "CC-BY-4.0",
+    "license": "MIT license",
     "categories": [ "Scripts" ],
     "contributes": {
         "scripts": [
